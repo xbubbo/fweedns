@@ -1,0 +1,16 @@
+# modules
+node_modules
+bun.lock
+
+# stores
+v1
+.env
+
+# logs
+bannedRegis
+failedCaps
+logs
+*.html
+
+# mac cache
+.DS_Store
