@@ -6,6 +6,9 @@ import domainDB from '../db/DomainDB';
 
 import solve from '../captcha';
 
+const words = fs.readFileSync(path.join(import.meta.dirname, '..', '4l.txt'), 'utf-8')
+    .split('\n').map((w) => w.trim()).filter(Boolean);
+
 const logDir = path.join(import.meta.dirname, '..', '..', 'logs');
 if (!fs.existsSync(path.dirname(logDir))) fs.mkdirSync(path.dirname(logDir), { recursive: true });
 
@@ -32,7 +35,7 @@ const addSubdomain = async (ip: string, logPath: string) => {
         const captchaBuffer = await captchaReq.arrayBuffer();
         const captchaSolution = await solve(captchaBuffer);
 
-        const subdomain = crypto.randomUUID().replaceAll('-', '').slice(0, 16);
+        const subdomain = words[Math.floor(Math.random() * words.length)] + (Math.floor(Math.random() * 9) + 1);
 
         const req = await fetch('https://freedns.afraid.org/subdomain/save.php?step=2', {
             method: 'POST',
