@@ -2,9 +2,9 @@ import path from 'node:path'
 import * as ort from 'onnxruntime-node'
 import sharp from 'sharp'
 
-const solve = async (imageBuffer: ArrayBuffer): Promise<string> => {
-    const session = await ort.InferenceSession.create(path.join(import.meta.dirname, 'model', 'crnn.onnx'))
+const session = await ort.InferenceSession.create(path.join(import.meta.dirname, 'model', 'crnn.onnx'))
 
+const solve = async (imageBuffer: ArrayBuffer): Promise<string> => {
     const { data } = await sharp(imageBuffer)
         .grayscale()
         .resize(200, 64, { kernel: 'linear' })
