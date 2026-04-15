@@ -13,7 +13,7 @@ if (!fs.existsSync(bannedRegisDir)) fs.mkdirSync(bannedRegisDir, { recursive: tr
 const failedCapDir = path.join(import.meta.dirname, '..', '..', 'failedCaps');
 if (!fs.existsSync(failedCapDir)) fs.mkdirSync(failedCapDir, { recursive: true });
 
-const isSavingBadCaps = true;
+const isSavingBadCaps = false;
 
 const red = (text: string) => `\x1b[31m${text}\x1b[0m`;
 const orange = (text: string) => `\x1b[38;5;208m${text}\x1b[0m`;

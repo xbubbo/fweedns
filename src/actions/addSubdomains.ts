@@ -10,7 +10,7 @@ const words = fs.readFileSync(path.join(import.meta.dirname, '..', '4l.txt'), 'u
     .split('\n').map((w) => w.trim()).filter(Boolean);
 
 const logDir = path.join(import.meta.dirname, '..', '..', 'logs');
-if (!fs.existsSync(path.dirname(logDir))) fs.mkdirSync(path.dirname(logDir), { recursive: true });
+if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
 
 const red = (text: string) => `\x1b[31m${text}\x1b[0m`;
 const orange = (text: string) => `\x1b[38;5;208m${text}\x1b[0m`;
