@@ -38,7 +38,8 @@ if (action === 'addSubdomains') {
     const { ip } = await e.prompt({
         type: 'input',
         name: 'ip',
-        message: 'what ip you wanna point the subdomains to?'
+        message: 'what ip you wanna point the subdomains to?',
+        initial: Bun.env.AUTOADD_IP || undefined
     }) as { ip: string }
 
     await import('./actions/addSubdomains').then(module => module.default(ip));
