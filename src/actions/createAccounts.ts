@@ -104,6 +104,11 @@ const createAccount = async () => {
             const emailReq = await fetch(`https://malq.villainsrule.xyz/api/v1/inbox/${addressRes.token}`);
             const emailRaw = await emailReq.text() as string;
             if (!emailRaw.startsWith('{')) {
+                if (emailRaw.includes('502: bad gateway')) {
+                    console.log(red('malq crashed and will be back soon'));
+                    break;
+                }
+
                 console.log(red('provider tweaking, inbox response isnt json'), addressRes.provider, emailRaw);
                 break;
             }
