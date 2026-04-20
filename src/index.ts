@@ -17,17 +17,16 @@ const { action } = await e.prompt({
         { name: 'createAccounts', message: 'create email-verified accounts' },
         { name: 'scrapeDomains', message: 'scrapes & saves all public domains' },
         { name: 'addSubdomains', message: 'add subdomains to existing accounts' },
+        { name: 'checkAccounts', message: 'checks for locked or deleted accounts' },
         { name: 'cleanupDB', message: 'cleanup accounts with no cookies' }
     ]
-}) as { action: 'stats' | 'createAccounts' | 'scrapeDomains' | 'addSubdomains' | 'cleanupDB' }
+}) as { action: 'stats' | 'createAccounts' | 'scrapeDomains' | 'addSubdomains' | 'checkAccounts' | 'cleanupDB' }
 
 if (action === 'stats') {
-    const accounts = accountDB.getAccounts();
-
     console.log('');
-    console.log(`   ${yellow('accounts:')} ${accounts.length}`);
+    console.log(`   ${yellow('accounts:')} ${accountDB.accounts.length}`);
     console.log(`   ${yellow('domains:')} ${domainDB.getDomains().length}`);
-    console.log(`   ${yellow('add space:')} ${accounts.reduce((sum, acc) => sum + (5 - acc.domains), 0)}`);
+    console.log(`   ${yellow('add space:')} ${accountDB.accounts.reduce((sum, acc) => sum + (5 - acc.domains), 0)}`);
     console.log('');
 }
 
@@ -45,7 +44,15 @@ if (action === 'addSubdomains') {
     await import('./actions/addSubdomains').then(module => module.default(ip));
 }
 
-if (action === 'cleanupDB') {
-    const accounts = accountDB.getAccounts();
-    accounts.forEach((acc) => !acc.cookie && accountDB.remove(acc.email));
+if (action === 'checkAccounts') {
+    const doDelete = await e.prompt({
+        type: 'confirm',
+        name: 'doDelete',
+        message: 'delete accounts that are locked?',
+        initial: true
+    }) as { doDelete: boolean }
+
+    await import('./actions/checkAccounts').then(module => module.default(doDelete.doDelete));
 }
+
+if (action === 'cleanupDB') accountDB.accounts.forEach((acc) => !acc.cookie && accountDB.delete(acc.email));

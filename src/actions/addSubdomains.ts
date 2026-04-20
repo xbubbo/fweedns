@@ -65,10 +65,10 @@ const addSubdomain = async (ip: string, logPath: string) => {
         } else if (text.includes('Remember Me!</font>')) console.log(yellow('> account is not logged in, skipping: ' + account.email));
         else if (text.includes('Locked Account')) {
             console.log(orange('* account is LOCKED. boo. josh spoil sport. ' + account.email));
-            accountDB.remove(account.email);
+            accountDB.delete(account.email);
         } else if (text.includes('Invalid UserID/Pass')) {
             console.log(orange('* account was DELETED. boo. josh spoil sport. ' + account.email));
-            accountDB.remove(account.email);
+            accountDB.delete(account.email);
         } else if (text.includes('<TITLE>Subdomains</TITLE>')) {
             console.log(green(`+ ${subdomain}.${domain.domain}`));
             accountDB.incrementDomains(account.email);
