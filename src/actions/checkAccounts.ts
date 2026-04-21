@@ -46,7 +46,11 @@ const checkAccount = async (account: Account, doDelete: boolean) => {
             } else if (domainReq.status.toString().startsWith('5')) setTimeout(() => checkAccount(account, doDelete), getRandomTimeout());
             else console.log(domainText, account, domainReq.status);
         } else if (req.status.toString().startsWith('5')) setTimeout(() => checkAccount(account, doDelete), getRandomTimeout());
-        else console.log(await req.text())
+        else {
+            const text = await req.text();
+            if (text.includes('Invalid UserID/Pass')) console.log(red(`login failed: ${account.email}`));
+            else console.log(red(`unexpected response for ${account.email} (status ${req.status})`));
+        }
     } catch (e: any) {
         if (e.message.toString().includes('The socket connection was closed unexpectedly')) return checkAccount(account, doDelete);
         console.error('error checking account:', e);
