@@ -6,6 +6,9 @@ const green = (text: string) => `\x1b[32m${text}\x1b[0m`;
 
 const getRandomTimeout = () => 1000 + Math.random() * 9000; 
 
+let lockedCount = 0;
+let unlockedCount = 0;
+
 const checkAccount = async (account: Account, doDelete: boolean) => {
     try {
         const req = await fetch('https://freedns.afraid.org/zc.php?step=2', {
@@ -34,10 +37,13 @@ const checkAccount = async (account: Account, doDelete: boolean) => {
 
             const domainText = await domainReq.text();
             if (domainText.includes('<TITLE>Locked Account</TITLE>')) {
+                lockedCount++;
                 console.log(red(`account locked: ${account.email}${doDelete ? ', deleting...' : ''}`));
                 if (doDelete) accountDB.delete(account.email);
-            } else if (domainText.includes('Add a subdomain') || domainText.includes('delete selected')) console.log(green(`account good: ${account.email}`));
-            else if (domainReq.status.toString().startsWith('5')) setTimeout(() => checkAccount(account, doDelete), getRandomTimeout());
+            } else if (domainText.includes('Add a subdomain') || domainText.includes('delete selected')) {
+                unlockedCount++;
+                console.log(green(`account good: ${account.email}`));
+            } else if (domainReq.status.toString().startsWith('5')) setTimeout(() => checkAccount(account, doDelete), getRandomTimeout());
             else console.log(domainText, account, domainReq.status);
         } else if (req.status.toString().startsWith('5')) setTimeout(() => checkAccount(account, doDelete), getRandomTimeout());
         else console.log(await req.text())
@@ -52,9 +58,15 @@ export default async (doDelete: boolean) => {
 
     console.log(yellow(`checking ${rndAccounts.length} accounts (estimated to take ${Math.round(20 * rndAccounts.length) / 1000 / 60} minutes)...`));
 
+    const promises = [];
     for (let i = 0; i < rndAccounts.length; i++) {
         const account = rndAccounts[i];
-        checkAccount(account, doDelete);
+        promises.push(checkAccount(account, doDelete));
         await new Promise(resolve => setTimeout(resolve, 20));
     }
+
+    await Promise.allSettled(promises);
+
+    console.log(green(`unlocked accounts: ${unlockedCount}`));
+    console.log(red(`locked accounts: ${lockedCount}`));
 }
