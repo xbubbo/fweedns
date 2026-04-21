@@ -9,7 +9,11 @@ const getRandomTimeout = () => 1000 + Math.random() * 9000;
 let lockedCount = 0;
 let unlockedCount = 0;
 
-const checkAccount = async (account: Account, doDelete: boolean) => {
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const checkAccount = async (account: Account, doDelete: boolean, retries = 0): Promise<void> => {
+    if (retries >= 5) return console.log(red(`max retries reached: ${account.email}`));
+
     try {
         const req = await fetch('https://freedns.afraid.org/zc.php?step=2', {
             method: 'POST',
@@ -43,21 +47,28 @@ const checkAccount = async (account: Account, doDelete: boolean) => {
             } else if (domainText.includes('Add a subdomain') || domainText.includes('delete selected')) {
                 unlockedCount++;
                 console.log(green(`account good: ${account.email}`));
-            } else if (domainReq.status.toString().startsWith('5')) setTimeout(() => checkAccount(account, doDelete), getRandomTimeout());
-            else console.log(domainText, account, domainReq.status);
-        } else if (req.status.toString().startsWith('5')) setTimeout(() => checkAccount(account, doDelete), getRandomTimeout());
-        else {
+            } else if (domainReq.status.toString().startsWith('5')) {
+                await sleep(getRandomTimeout());
+                return checkAccount(account, doDelete, retries + 1);
+            } else console.log(red(`unexpected subdomain response for ${account.email} (status ${domainReq.status})`));
+        } else if (req.status.toString().startsWith('5')) {
+            await sleep(getRandomTimeout());
+            return checkAccount(account, doDelete, retries + 1);
+        } else {
             const text = await req.text();
             if (text.includes('Invalid UserID/Pass')) console.log(red(`login failed: ${account.email}`));
-            else console.log(red(`unexpected response for ${account.email} (status ${req.status})`));
+            else console.log(red(`unexpected login response for ${account.email} (status ${req.status})`));
         }
     } catch (e: any) {
-        if (e.message.toString().includes('The socket connection was closed unexpectedly')) return checkAccount(account, doDelete);
+        if (e.message.toString().includes('The socket connection was closed unexpectedly')) return checkAccount(account, doDelete, retries + 1);
         console.error('error checking account:', e);
     }
 }
 
 export default async (doDelete: boolean) => {
+    lockedCount = 0;
+    unlockedCount = 0;
+
     const rndAccounts = accountDB.accounts.sort(() => Math.random() - 0.5);
 
     console.log(yellow(`checking ${rndAccounts.length} accounts (estimated to take ${Math.round(20 * rndAccounts.length) / 1000 / 60} minutes)...`));
