@@ -27,12 +27,17 @@ const checkAccount = async (account: Account, doDelete: boolean, retries = 0): P
                 'from': 'L2RvbWFpbi8=',
                 'action': 'auth'
             }),
-            redirect: 'manual'
+            redirect: 'manual',
+            tls: { rejectUnauthorized: false }
         });
 
         if (req.headers.get('location') === 'http://freedns.afraid.org/domain/?ls=1') {
             const dnsCookie = req.headers.getSetCookie().find(e => e.startsWith('dns_cookie='));
-            if (!dnsCookie) return console.log(red(`-----> missing cookie: ${account.email}`));
+            if (!dnsCookie) {
+                console.log(red(`missing cookie: ${account.email}${doDelete ? ', deleting...' : ''}`));
+                if (doDelete) accountDB.delete(account.email);
+                return;
+            }
 
             const domainReq = await fetch('https://freedns.afraid.org/subdomain/', {
                 headers: { cookie: dnsCookie },
