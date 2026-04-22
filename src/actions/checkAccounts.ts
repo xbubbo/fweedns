@@ -11,15 +11,13 @@ let unlockedCount = 0;
 let failedCount = 0;
 let loginFailedCount = 0;
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 const checkAccount = async (account: Account, doDelete: boolean, retries = 0): Promise<void> => {
-    if (retries >= 5) {
+    if (retries >= 3) {
         failedCount++;
         console.log(red(`max retries reached: ${account.email}`));
         return;
     }
-    if (retries > 0) console.log(yellow(`retrying (${retries}/5): ${account.email}`));
+    if (retries > 0) console.log(yellow(`retrying (${retries}/3): ${account.email}`));
 
     try {
         const req = await fetch('https://freedns.afraid.org/zc.php?step=2', {
@@ -60,14 +58,14 @@ const checkAccount = async (account: Account, doDelete: boolean, retries = 0): P
                 unlockedCount++;
                 console.log(green(`account good: ${account.email}`));
             } else if (domainReq.status.toString().startsWith('5')) {
-                await sleep(getRandomTimeout());
+                await new Promise(resolve => setTimeout(resolve, getRandomTimeout()));
                 return checkAccount(account, doDelete, retries + 1);
             } else {
                 failedCount++;
                 console.log(red(`unexpected subdomain response for ${account.email} (status ${domainReq.status})`));
             }
         } else if (req.status.toString().startsWith('5')) {
-            await sleep(getRandomTimeout());
+            await new Promise(resolve => setTimeout(resolve, getRandomTimeout()));
             return checkAccount(account, doDelete, retries + 1);
         } else {
             const text = await req.text();
@@ -75,7 +73,7 @@ const checkAccount = async (account: Account, doDelete: boolean, retries = 0): P
                 loginFailedCount++;
                 console.log(red(`login failed: ${account.email}`));
             } else {
-                await sleep(getRandomTimeout());
+                await new Promise(resolve => setTimeout(resolve, getRandomTimeout()));
                 return checkAccount(account, doDelete, retries + 1);
             }
         }
@@ -94,7 +92,7 @@ export default async (doDelete: boolean) => {
 
     const rndAccounts = accountDB.accounts.sort(() => Math.random() - 0.5);
 
-    console.log(yellow(`checking ${rndAccounts.length} accounts (estimated to take ${Math.round(20 * rndAccounts.length) / 1000 / 60} minutes)...`));
+    console.log(yellow(`checking ${rndAccounts.length} accounts (estimated to take ${Math.round(20 * rndAccounts.length / 60000)} minutes)...`));
 
     const promises = [];
     for (let i = 0; i < rndAccounts.length; i++) {
