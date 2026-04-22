@@ -8,11 +8,18 @@ const getRandomTimeout = () => 1000 + Math.random() * 9000;
 
 let lockedCount = 0;
 let unlockedCount = 0;
+let failedCount = 0;
+let loginFailedCount = 0;
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const checkAccount = async (account: Account, doDelete: boolean, retries = 0): Promise<void> => {
-    if (retries >= 5) return console.log(red(`max retries reached: ${account.email}`));
+    if (retries >= 5) {
+        failedCount++;
+        console.log(red(`max retries reached: ${account.email}`));
+        return;
+    }
+    if (retries > 0) console.log(yellow(`retrying (${retries}/5): ${account.email}`));
 
     try {
         const req = await fetch('https://freedns.afraid.org/zc.php?step=2', {
@@ -27,8 +34,7 @@ const checkAccount = async (account: Account, doDelete: boolean, retries = 0): P
                 'from': 'L2RvbWFpbi8=',
                 'action': 'auth'
             }),
-            redirect: 'manual',
-            tls: { rejectUnauthorized: false }
+            redirect: 'manual'
         });
 
         if (req.headers.get('location') === 'http://freedns.afraid.org/domain/?ls=1') {
@@ -36,6 +42,7 @@ const checkAccount = async (account: Account, doDelete: boolean, retries = 0): P
             if (!dnsCookie) {
                 console.log(red(`missing cookie: ${account.email}${doDelete ? ', deleting...' : ''}`));
                 if (doDelete) accountDB.delete(account.email);
+                failedCount++;
                 return;
             }
 
@@ -55,17 +62,26 @@ const checkAccount = async (account: Account, doDelete: boolean, retries = 0): P
             } else if (domainReq.status.toString().startsWith('5')) {
                 await sleep(getRandomTimeout());
                 return checkAccount(account, doDelete, retries + 1);
-            } else console.log(red(`unexpected subdomain response for ${account.email} (status ${domainReq.status})`));
+            } else {
+                failedCount++;
+                console.log(red(`unexpected subdomain response for ${account.email} (status ${domainReq.status})`));
+            }
         } else if (req.status.toString().startsWith('5')) {
             await sleep(getRandomTimeout());
             return checkAccount(account, doDelete, retries + 1);
         } else {
             const text = await req.text();
-            if (text.includes('Invalid UserID/Pass')) console.log(red(`login failed: ${account.email}`));
-            else console.log(red(`unexpected login response for ${account.email} (status ${req.status})`));
+            if (text.includes('Invalid UserID/Pass')) {
+                loginFailedCount++;
+                console.log(red(`login failed: ${account.email}`));
+            } else {
+                await sleep(getRandomTimeout());
+                return checkAccount(account, doDelete, retries + 1);
+            }
         }
     } catch (e: any) {
         if (e.message.toString().includes('The socket connection was closed unexpectedly')) return checkAccount(account, doDelete, retries + 1);
+        failedCount++;
         console.error('error checking account:', e);
     }
 }
@@ -73,6 +89,8 @@ const checkAccount = async (account: Account, doDelete: boolean, retries = 0): P
 export default async (doDelete: boolean) => {
     lockedCount = 0;
     unlockedCount = 0;
+    failedCount = 0;
+    loginFailedCount = 0;
 
     const rndAccounts = accountDB.accounts.sort(() => Math.random() - 0.5);
 
@@ -89,4 +107,6 @@ export default async (doDelete: boolean) => {
 
     console.log(green(`unlocked accounts: ${unlockedCount}`));
     console.log(red(`locked accounts: ${lockedCount}`));
+    console.log(red(`login failed: ${loginFailedCount}`));
+    console.log(yellow(`failed/skipped: ${failedCount}`));
 }
