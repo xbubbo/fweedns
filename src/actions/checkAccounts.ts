@@ -33,10 +33,10 @@ const checkAccount = async (account: Account, doDelete: boolean) => {
             });
 
             const domainText = await domainReq.text();
-            if (domainText.includes('<TITLE>Locked Account</TITLE>')) {
+            if (domainText.includes('<TITLE>Locked Account</TITLE>') || domainText.includes('Invalid UserID/Pass')) {
                 console.log(red(`account locked: ${account.email}${doDelete ? ', deleting...' : ''}`));
                 if (doDelete) accountDB.delete(account.email);
-            } else if (domainText.includes('Add a subdomain') || domainText.includes('delete selected')) console.log(green(`account good: ${account.email}`));
+            } else if (domainText.includes('Add a subdomain') || domainText.includes('delete selected') || domainText.includes('<TITLE>Premium memberships</TITLE>')) console.log(green(`account good: ${account.email}`));
             else if (domainReq.status.toString().startsWith('5')) setTimeout(() => checkAccount(account, doDelete), getRandomTimeout());
             else console.log(domainText, account, domainReq.status);
         } else if (req.status.toString().startsWith('5')) setTimeout(() => checkAccount(account, doDelete), getRandomTimeout());
