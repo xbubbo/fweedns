@@ -56,7 +56,7 @@ const checkAccount = async (account: Account, doDelete: boolean, retries = 0): P
                 lockedCount++;
                 console.log(red(`account locked: ${account.email}${doDelete ? ', deleting...' : ''}`));
                 if (doDelete) accountDB.delete(account.email);
-            } else if (domainText.includes('Add a subdomain') || domainText.includes('delete selected')) {
+            } else if (domainText.includes('Add a subdomain') || domainText.includes('delete selected') || domainText.includes('<TITLE>Premium memberships</TITLE>')) {
                 unlockedCount++;
                 console.log(green(`account good: ${account.email}`));
             } else if (domainReq.status.toString().startsWith('5')) {
