@@ -3,8 +3,9 @@ import accountDB, { type Account } from '../db/AccountDB';
 const red = (text: string) => `\x1b[31m${text}\x1b[0m`;
 const yellow = (text: string) => `\x1b[33m${text}\x1b[0m`;
 const green = (text: string) => `\x1b[32m${text}\x1b[0m`;
+const blue = (text: string) => `\x1b[34m${text}\x1b[0m`;
 
-const getRandomTimeout = () => 1000 + Math.random() * 9000; 
+const getRandomTimeout = () => 1000 + Math.random() * 9000;
 
 let lockedCount = 0;
 let unlockedCount = 0;
@@ -93,6 +94,16 @@ export default async (doDelete: boolean) => {
     const rndAccounts = accountDB.accounts.sort(() => Math.random() - 0.5);
 
     console.log(yellow(`checking ${rndAccounts.length} accounts (estimated to take ${Math.round(20 * rndAccounts.length / 60000)} minutes)...`));
+
+    setInterval(() => {
+        console.log('');
+        console.log(blue(`progress update: checked ${unlockedCount + lockedCount + loginFailedCount + failedCount}/${rndAccounts.length} accounts so far...`));
+        console.log(green(`unlocked accounts: ${unlockedCount}`));
+        console.log(red(`locked accounts: ${lockedCount}`));
+        console.log(red(`login failed: ${loginFailedCount}`));
+        console.log(yellow(`failed/skipped: ${failedCount}`));
+        console.log('');
+    }, 30_000).unref();
 
     const promises = [];
     for (let i = 0; i < rndAccounts.length; i++) {
